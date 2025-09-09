@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Online Bookstore - Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav { margin-bottom: 20px; }
+    nav button { margin-right: 10px; }
+    section { display: none; margin-top: 20px; }
+    section.active { display: block; }
+    input, button { margin: 5px; padding: 5px; }
+    .book { border: 1px solid #ccc; padding: 10px; margin: 5px; }
+    .message { margin-bottom: 10px; padding: 5px; border-radius: 5px; }
+    .success { background-color: #d4edda; color: #155724; }
+    .error { background-color: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>📚 Online Bookstore</h1>
+
+  <nav>
+    <button onclick="showSection('login')">Login</button>
+    <button onclick="showSection('register')">Register</button>
+    <button onclick="showSection('books')">Books</button>
+    <button onclick="showSection('cart')">Cart</button>
+    <button onclick="showSection('admin')">Admin</button>
+    <button onclick="logout()">Logout</button>
+  </nav>
+
+  <!-- Admin -->
+  <section id="admin">
+    <h2>Admin Panel</h2>
+    <input id="book-title" placeholder="Book Title"><br>
+    <input id="book-author" placeholder="Author"><br>
+    <input id="book-price" type="number" placeholder="Price"><br>
+    <button onclick="addBook()">Add Book</button>
+    <div id="admin-books"></div>
+  </section>
+
+  <script>
+    const API = "http://127.0.0.1:5000";
+    let token = localStorage.getItem("token");
+    let role = localStorage.getItem("role");
+
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      if (id === "admin") fetchAdminBooks();
+    }
+
+    function logout() {
+      token = null;
+      role = null;
+      localStorage.clear();
+      alert("Logged out!");
+      showSection("login");
+    }
+
+    async function addBook() {
+      if (role !== "admin") return alert("Admins only!");
+
+      const res = await fetch(`${API}/admin/books`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          "Authorization": "Bearer " + token 
+        },
+        body: JSON.stringify({
+          title: document.getElementById("book-title").value,
+          author: document.getElementById("book-author").value,
+          price: document.getElementById("book-price").value
+        })
+      });
+
+      const data = await res.json();
+
+      // Show success/error message
+      const adminBooksDiv = document.getElementById("admin-books");
+      const msgDiv = document.createElement("div");
+      msgDiv.innerText = data.message || data.error;
+      msgDiv.className = "message " + (data.message ? "success" : "error");
+      adminBooksDiv.prepend(msgDiv);
+
+      // Refresh admin book list
+      fetchAdminBooks();
+
+      // Clear input fields
+      document.getElementById("book-title").value = "";
+      document.getElementById("book-author").value = "";
+      document.getElementById("book-price").value = "";
+    }
+
+    async function fetchAdminBooks() {
+      if (role !== "admin") return;
+      const res = await fetch(`${API}/books`);
+      const books = await res.json();
+      const container = document.getElementById("admin-books");
+      container.innerHTML = "<h3>Manage Books</h3>";
+      books.forEach(b => {
+        const div = document.createElement("div");
+        div.className = "book";
+        div.innerHTML = `<b>${b.title}</b> by ${b.author} - $${b.price}`;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

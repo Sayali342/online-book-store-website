@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cart</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Your Cart</h1>
+    <div id="cartItems" class="mt-4"></div>
+</div>
+
+<script>
+    const token = localStorage.getItem("token");
+
+    async function loadCart() {
+        const res = await fetch("http://127.0.0.1:5000/cart", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const items = await res.json();
+        const cartDiv = document.getElementById("cartItems");
+        cartDiv.innerHTML = "";
+
+        if(items.length === 0) {
+            cartDiv.innerHTML = "<p>Your cart is empty</p>";
+            return;
+        }
+
+        items.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "card mb-2";
+            div.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">Book ID: ${item.book_id}</h5>
+                    <p>Quantity: ${item.quantity}</p>
+                </div>
+            `;
+            cartDiv.appendChild(div);
+        });
+    }
+
+    loadCart();
+</script>
+</body>
+</html>
